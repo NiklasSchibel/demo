@@ -201,7 +201,7 @@ function App() {
                     {renderStudents()}
                 </div>
             </Content>
-            <Footer style={{textAlign: 'center'}}>Amigoscode</Footer>
+            <Footer style={{textAlign: 'center'}}>By an Amigoscode</Footer>
         </Layout>
     </Layout>
 }
