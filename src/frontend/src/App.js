@@ -1,5 +1,5 @@
 import {useState, useEffect} from 'react'
-import {getAllStudents} from "./client";
+import {deleteStudent, getAllStudents} from "./client";
 import {
     Layout,
     Menu,
@@ -22,20 +22,39 @@ import {
 import StudentDrawerForm from "./StudentDrawerForm";
 
 import './App.css';
+import {errorNotification, successNotification} from "./Notification";
 
 const {Header, Content, Footer, Sider} = Layout;
 const {SubMenu} = Menu;
 
 const TheAvatar = ({name}) => {
     let trim = name.trim();
-    if (trim === 0 ){
-        return <Avatar icon = {<UserOutlined/>}/>
+    if (trim.length === 0) {
+        return <Avatar icon={<UserOutlined/>}/>
     }
-    const split = trim.split(" ")
-    if (split===1){
+    const split = trim.split(" ");
+    if (split.length === 1) {
         return <Avatar>{name.charAt(0)}</Avatar>
     }
-    return <Avatar>{`${name.charAt(0)}${name.charAt(name.length()-1)}`}</Avatar>
+    return <Avatar>
+        {`${name.charAt(0)}${name.charAt(name.length - 1)}`}
+    </Avatar>
+}
+
+
+const removeStudent = (studentId, callback) => {
+    deleteStudent(studentId).then(() => {
+        successNotification("Student deleted", `Student with ${studentId} was deleted`);
+        callback();
+    }).catch(err => {
+        err.response.json().then(res => {
+            console.log(res);
+            errorNotification(
+                "There was an issue",
+                `${res.message} [${res.status}] [${res.error}]`
+            )
+        });
+    })
 }
 
 const columns = [
@@ -43,7 +62,8 @@ const columns = [
         title: '',
         dataIndex: 'avatar',
         key: 'avatar',
-        render: (text,student) =><Avatar/>
+        render: (text, student) =>
+            <TheAvatar name={student.name}/>
     },
     {
         title: 'Id',
@@ -81,8 +101,16 @@ function App() {
             .then(data => {
                 console.log(data);
                 setStudents(data);
-                setFetching(false);
-            })
+            }).catch(err => {
+            console.log(err.response)
+            err.response.json().then(res => {
+                console.log(res);
+                errorNotification(
+                    "There was an issue",
+                    `${res.message} [${res.status}] [${res.error}]`
+                )
+            });
+        }).finally(() => setFetching(false))
 
     useEffect(() => {
         console.log("component is mounted");
@@ -94,7 +122,19 @@ function App() {
             return <Spin indicator={antIcon}/>
         }
         if (students.length <= 0) {
-            return <Empty/>;
+            return <>
+                <StudentDrawerForm
+                    showDrawer={showDrawer}
+                    setShowDrawer={setShowDrawer}
+                    fetchStudents={fetchStudents}
+                />
+                <Button
+                onClick={() => setShowDrawer(!showDrawer)}
+                type="primary" shape="round" icon={<PlusOutlined/>} size="small">
+                Add New Student
+                </Button>
+                <Empty/>
+            </>;
         }
         return <>
             <StudentDrawerForm
